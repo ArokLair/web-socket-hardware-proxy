@@ -14,6 +14,9 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+import java.awt.Toolkit;
 
 public class ConfigGUI extends JFrame {
 
@@ -22,8 +25,10 @@ public class ConfigGUI extends JFrame {
 	 */
 	private static final long serialVersionUID = 7028814539873502947L;
 	private JPanel contentPane;
-	private JTextField textField;
-	private JTextField textField_1;
+	private JTextField text_ws_server;
+	private JTextField text_posid;
+	private JTextField text_ws_port;
+	private JTextField text_printerName;
 
 	/**
 	 * Launch the application.
@@ -45,10 +50,11 @@ public class ConfigGUI extends JFrame {
 	 * Create the frame.
 	 */
 	public ConfigGUI() {
-		setTitle("Configuracion agente");
+		setIconImage(Toolkit.getDefaultToolkit().getImage(ConfigGUI.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
+		setTitle("Agent config");
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 582, 325);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -57,39 +63,80 @@ public class ConfigGUI extends JFrame {
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.CENTER);
 		
-		JLabel lblUrl = new JLabel("URL");
+		JLabel lblUrl = new JLabel("Server");
 		
-		textField = new JTextField();
-		textField.setToolTipText("Ejemplo: ws://server.com.ec:8080/hw-proxy");
-		textField.setColumns(10);
+		text_ws_server = new JTextField();
+		text_ws_server.setToolTipText("Ejemplo: ws://server.com.ec:8080/hw-proxy");
+		text_ws_server.setColumns(10);
 		
-		JLabel lblIdDeCliente = new JLabel("Id de Cliente");
+		JLabel lblIdDeCliente = new JLabel("POSID");
 		
-		textField_1 = new JTextField();
-		textField_1.setColumns(10);
+		text_posid = new JTextField();
+		text_posid.setColumns(10);
 		
-		JButton btnConectar = new JButton("Conectar al Server");
-		
-		JLabel lblLogDeEventos = new JLabel("Log de Eventos");
+		JLabel lblLogDeEventos = new JLabel("Logs");
 		
 		JScrollPane scrollPane = new JScrollPane();
+		
+		JLabel lblPort = new JLabel("Port");
+		
+		text_ws_port = new JTextField();
+		text_ws_port.setToolTipText("8080");
+		text_ws_port.setColumns(10);
+		
+		JButton btnTestCom = new JButton("Test Com");
+		
+		JLabel lblNewLabel = new JLabel("Status...");
+		
+		JLabel lblPrinterName = new JLabel("Printer Name");
+		
+		text_printerName = new JTextField();
+		text_printerName.setColumns(10);
+		
+		JLabel lblPrinterDriver = new JLabel("Printer Driver");
+		
+		JComboBox cmb_print_driver = new JComboBox();
+		cmb_print_driver.setModel(new DefaultComboBoxModel(new String[] {"EPSON ESC/POS"}));
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 			gl_panel.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_panel.createSequentialGroup()
-					.addContainerGap()
+					.addGap(12)
+					.addComponent(btnTestCom)
+					.addGap(388))
+				.addGroup(gl_panel.createSequentialGroup()
+					.addGap(12)
+					.addComponent(lblLogDeEventos)
+					.addPreferredGap(ComponentPlacement.RELATED, 489, Short.MAX_VALUE)
+					.addComponent(lblNewLabel))
+				.addGroup(gl_panel.createSequentialGroup()
+					.addGap(12)
+					.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE))
+				.addGroup(gl_panel.createSequentialGroup()
 					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-						.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
 						.addGroup(gl_panel.createSequentialGroup()
-							.addComponent(lblUrl)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(textField, GroupLayout.DEFAULT_SIZE, 385, Short.MAX_VALUE))
+							.addGap(12)
+							.addComponent(lblPrinterName))
 						.addGroup(gl_panel.createSequentialGroup()
-							.addComponent(lblIdDeCliente)
+							.addContainerGap()
+							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblUrl)
+								.addComponent(lblIdDeCliente))))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+						.addGroup(gl_panel.createSequentialGroup()
+							.addComponent(text_ws_server, GroupLayout.PREFERRED_SIZE, 258, GroupLayout.PREFERRED_SIZE)
+							.addGap(70)
+							.addComponent(lblPort)
+							.addGap(18)
+							.addComponent(text_ws_port, GroupLayout.DEFAULT_SIZE, 128, Short.MAX_VALUE))
+						.addComponent(text_printerName, 192, 192, 192)
+						.addGroup(gl_panel.createSequentialGroup()
+							.addComponent(text_posid, GroupLayout.PREFERRED_SIZE, 136, GroupLayout.PREFERRED_SIZE)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(textField_1, GroupLayout.PREFERRED_SIZE, 136, GroupLayout.PREFERRED_SIZE))
-						.addComponent(btnConectar)
-						.addComponent(lblLogDeEventos))
+							.addComponent(lblPrinterDriver)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(cmb_print_driver, 0, 219, Short.MAX_VALUE)))
 					.addContainerGap())
 		);
 		gl_panel.setVerticalGroup(
@@ -98,23 +145,33 @@ public class ConfigGUI extends JFrame {
 					.addContainerGap()
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblUrl)
-						.addComponent(textField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addComponent(text_ws_server, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblPort)
+						.addComponent(text_ws_port, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
 						.addComponent(lblIdDeCliente)
-						.addComponent(textField_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
-					.addComponent(lblLogDeEventos)
+						.addComponent(text_posid, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(cmb_print_driver, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblPrinterDriver))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblPrinterName)
+						.addComponent(text_printerName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED, 8, Short.MAX_VALUE)
+					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblLogDeEventos)
+						.addComponent(lblNewLabel))
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 123, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(btnConectar)
+					.addComponent(btnTestCom)
 					.addContainerGap())
 		);
 		
-		JTextArea textArea = new JTextArea();
-		textArea.setEditable(false);
-		scrollPane.setViewportView(textArea);
+		JTextArea text_area_log = new JTextArea();
+		text_area_log.setEditable(false);
+		scrollPane.setViewportView(text_area_log);
 		panel.setLayout(gl_panel);
 	}
 }
