@@ -1,6 +1,8 @@
 package ec.com.umbral.ws;
 
 import java.io.EOFException;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -12,13 +14,19 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint(value = "/websocket/hw-proxy")
 public class HwProxy {
 
+//	private static final Set<ClientDevice> devices =new CopyOnWriteArraySet<>();
+//	private Session session;
+	
 	public HwProxy() {
 		
 	}
 	
 	@OnOpen
 	public void onOpen(Session session) {
-		
+//		this.session=session;
+//		String id_dev=session.getRequestParameterMap().get("device_id").toString();
+//		ClientDevice dev=new ClientDevice(id_dev,StatusInfoDevice.STATUS.CONNECTED);
+//		devices.add(dev);
 	}
 	
 	@OnMessage
