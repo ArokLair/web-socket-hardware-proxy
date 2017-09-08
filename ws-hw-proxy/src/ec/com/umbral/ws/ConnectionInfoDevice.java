@@ -1,7 +1,5 @@
 package ec.com.umbral.ws;
 
-import javax.websocket.Session;
-
 import ec.com.umbral.ws.StatusInfoDevice.STATUS;
 
 public class ConnectionInfoDevice {
