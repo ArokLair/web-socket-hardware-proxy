@@ -1,9 +1,6 @@
 package ec.com.umbral.ws;
 
 import java.io.EOFException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -14,8 +11,9 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint(value = "/websocket/hw-proxy")
 public class HwProxy {
 
-//	private static final Set<ClientDevice> devices =new CopyOnWriteArraySet<>();
-//	private Session session;
+	 //private static final Map<String, Device> connections = new HashMap<String, Device>();
+	 
+	private Session session;
 	
 	public HwProxy() {
 		
@@ -23,11 +21,13 @@ public class HwProxy {
 	
 	@OnOpen
 	public void onOpen(Session session) {
-//		this.session=session;
-//		String id_dev=session.getRequestParameterMap().get("device_id").toString();
-//		ClientDevice dev=new ClientDevice(id_dev,StatusInfoDevice.STATUS.CONNECTED);
-//		devices.add(dev);
+		this.session=session;
+		//String id_dev=session.getRequestParameterMap().get("device_id").toString();
+		//sendConnectionInfo(session);
+		//connections.put(id_dev, Device);
 	}
+	
+	
 	
 	@OnMessage
 	public void onTextMessage(String message) {
