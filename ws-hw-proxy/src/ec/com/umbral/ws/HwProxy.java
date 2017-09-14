@@ -1,6 +1,5 @@
 package ec.com.umbral.ws;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -16,40 +15,77 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
 
 import com.google.gson.Gson;
 
 import ec.com.umbral.messages.ConnectionInfoDevice;
+import ec.com.umbral.messages.MessageInfoDevice;
 import ec.com.umbral.messages.StatusInfoDevice;
 
 @ServerEndpoint(value = "/websocket/hw-proxy")
 public class HwProxy {
 
 	private static final Map<String, HwProxy> connections = new HashMap<String, HwProxy>();
-	private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
+	//private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
+	private static final Log log = LogFactory.getLog(HwProxy.class);
 
-	private final String connectionId;
-	private final String device;
-	private final Gson jsonProcessor;
+	private String connectionId=null;
+	private String device=null;
+	private Gson jsonProcessor=new Gson();
 	private Session session;
 
-	public HwProxy(String connectionId, String device) {
-		this.connectionId = connectionId;
-		this.device = device;
-		this.jsonProcessor = new Gson();
+	public HwProxy() {
+		
 	}
+//	public HwProxy(String connectionId, String device) {
+//		this.connectionId = connectionId;
+//		this.device = device;
+//		this.jsonProcessor = new Gson();
+//	}
 
 	@OnOpen
 	public void onOpen(Session session) {
 		this.setSession(session);
+		this.device=session.getPathParameters().get("devID");
 		sendConnectionInfo(session);
-		sendStatusInfoToOtherUsers(new StatusInfoDevice(device, StatusInfoDevice.STATUS.CONNECTED));
+		sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.CONNECTED));
 		connections.put(connectionId, this);
 	}
 
-	private void sendStatusInfoToOtherUsers(StatusInfoDevice message) {
+	@OnClose
+	public void onClose() {
+		 sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.DISCONNECTED));
+		 connections.remove(connectionId);
+	}
+	
+	@OnMessage
+	public void onTextMessage(String mess) {
+		 final MessageInfoDevice message = jsonProcessor.fromJson(mess, MessageInfoDevice.class);
+         final HwProxy destinationConnection = getDestinationDevConnection(message.getMessageInfo().getTo_dev());
+         if (destinationConnection != null) {
+             final CharBuffer jsonMessage = CharBuffer.wrap(jsonProcessor.toJson(message));
+             try {
+				destinationConnection.getSession().getBasicRemote().sendText(jsonMessage.toString());
+			} catch (IOException e) {
+				log.error("Error de IO");
+				e.printStackTrace();
+			}
+         } else {
+             log.warn("Se está intentando enviar un mensaje a un device no conectado");
+}
+	}
+	
+	private HwProxy getDestinationDevConnection(String to_dev) {
+		for (HwProxy connection : connections.values()) {
+            if (to_dev.equals(connection.getDevice())) {
+                return connection;
+            }
+        }
+		return null;
+	}
+	private void sendStatusInfoToOtherClients(StatusInfoDevice message) {
 		final Collection<HwProxy> otherUsersConnections = getAllChatConnectionsExceptThis();
 		for (HwProxy connection : otherUsersConnections) {
 			try {
@@ -87,33 +123,13 @@ public class HwProxy {
 		return activeDevices;
 	}
 
-	@OnMessage
-	public void onTextMessage(String message) {
+	
 
-	}
 
-	@OnClose
-	public void onClose() {
-
-	}
 
 	@OnError
 	public void onError(Throwable t) throws Throwable {
-		// Most likely cause is a user closing their browser. Check to see if
-		// the root cause is EOF and if it is ignore it.
-		// Protect against infinite loops.
-		int count = 0;
-		Throwable root = t;
-		while (root.getCause() != null && count < 20) {
-			root = root.getCause();
-			count++;
-		}
-		if (root instanceof EOFException) {
-			// Assume this is triggered by the user closing their browser and
-			// ignore it.
-		} else {
-			throw t;
-		}
+		log.error("Error: " + t.toString(), t);
 	}
 
 	public String getDevice() {

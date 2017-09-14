@@ -20,7 +20,7 @@ public class ServerAPI {
 	
 	private Session sesion;
 	private static final Log log = LogFactory.getLog(HwProxy.class);
-	
+	//ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=HWPOS001
 	public ServerAPI(URI endPointURI) {
 		WebSocketContainer wsc=ContainerProvider.getWebSocketContainer();
 		try {
