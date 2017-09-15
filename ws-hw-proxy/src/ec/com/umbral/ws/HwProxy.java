@@ -28,27 +28,24 @@ import ec.com.umbral.messages.StatusInfoDevice;
 public class HwProxy {
 
 	private static final Map<String, HwProxy> connections = new HashMap<String, HwProxy>();
-	//private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
+	// private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
 	private static final Log log = LogFactory.getLog(HwProxy.class);
 
-	private String connectionId=null;
-	private String device=null;
-	private Gson jsonProcessor=new Gson();
+	private String connectionId = new String();
+
+	private String device = new String();
+	private Gson jsonProcessor = new Gson();
 	private Session session;
 
 	public HwProxy() {
-		
+
 	}
-//	public HwProxy(String connectionId, String device) {
-//		this.connectionId = connectionId;
-//		this.device = device;
-//		this.jsonProcessor = new Gson();
-//	}
 
 	@OnOpen
 	public void onOpen(Session session) {
 		this.setSession(session);
-		this.device=session.getPathParameters().get("devID");
+		this.setConnectionId(session.getId());
+		this.device = session.getRequestParameterMap().get("devID").toString();
 		sendConnectionInfo(session);
 		sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.CONNECTED));
 		connections.put(connectionId, this);
@@ -56,41 +53,53 @@ public class HwProxy {
 
 	@OnClose
 	public void onClose() {
-		 sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.DISCONNECTED));
-		 connections.remove(connectionId);
+		sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.DISCONNECTED));
+		connections.remove(connectionId);
 	}
-	
+	/**
+	 * Struct Json Message
+	 * {
+     *		messageInfo : 
+     *		{
+     *   		from_dev : '[SERVER]',
+     *   		to_dev : '[HWPOS001]',
+     *   		message : 'PRINT_FILE'
+     *		}
+	 *	}
+	 * @param mess
+	 */
 	@OnMessage
 	public void onTextMessage(String mess) {
-		 final MessageInfoDevice message = jsonProcessor.fromJson(mess, MessageInfoDevice.class);
-         final HwProxy destinationConnection = getDestinationDevConnection(message.getMessageInfo().getTo_dev());
-         if (destinationConnection != null) {
-             final CharBuffer jsonMessage = CharBuffer.wrap(jsonProcessor.toJson(message));
-             try {
-				destinationConnection.getSession().getBasicRemote().sendText(jsonMessage.toString());
+		final MessageInfoDevice message = jsonProcessor.fromJson(mess, MessageInfoDevice.class);
+		final HwProxy destinationConnection = getDestinationDevConnection(message.getMessageInfo().getTo_dev());
+		if (destinationConnection != null) {
+			final String jsonMessage = jsonProcessor.toJson(message);
+			try {
+				destinationConnection.getSession().getBasicRemote().sendText(jsonMessage);
 			} catch (IOException e) {
 				log.error("Error de IO");
 				e.printStackTrace();
 			}
-         } else {
-             log.warn("Se está intentando enviar un mensaje a un device no conectado");
-}
+		} else {
+			log.warn("Se está intentando enviar un mensaje a un device no conectado");
+		}
 	}
-	
+
 	private HwProxy getDestinationDevConnection(String to_dev) {
 		for (HwProxy connection : connections.values()) {
-            if (to_dev.equals(connection.getDevice())) {
-                return connection;
-            }
-        }
+			if (to_dev.equals(connection.getDevice())) {
+				return connection;
+			}
+		}
 		return null;
 	}
+
 	private void sendStatusInfoToOtherClients(StatusInfoDevice message) {
 		final Collection<HwProxy> otherUsersConnections = getAllChatConnectionsExceptThis();
 		for (HwProxy connection : otherUsersConnections) {
 			try {
 				connection.getSession().getBasicRemote()
-						.sendText(CharBuffer.wrap(jsonProcessor.toJson(message)).toString());
+						.sendText(jsonProcessor.toJson(message));
 			} catch (IOException e) {
 				log.error("No se pudo enviar el mensaje", e);
 			}
@@ -108,7 +117,7 @@ public class HwProxy {
 		final List<String> activeDevices = getActiveDevices();
 		final ConnectionInfoDevice connectionInfoDevice = new ConnectionInfoDevice(device, activeDevices);
 		try {
-			session.getBasicRemote().sendText(CharBuffer.wrap(jsonProcessor.toJson(connectionInfoDevice)).toString());
+			session.getBasicRemote().sendText(jsonProcessor.toJson(connectionInfoDevice));
 		} catch (IOException e) {
 			log.error("No se pudo enviar el mensaje al dispotivos", e);
 		}
@@ -122,10 +131,6 @@ public class HwProxy {
 		}
 		return activeDevices;
 	}
-
-	
-
-
 
 	@OnError
 	public void onError(Throwable t) throws Throwable {
@@ -144,4 +149,11 @@ public class HwProxy {
 		this.session = session;
 	}
 
+	public String getConnectionId() {
+		return connectionId;
+	}
+
+	public void setConnectionId(String connectionId) {
+		this.connectionId = connectionId;
+	}
 }

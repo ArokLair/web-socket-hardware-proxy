@@ -10,17 +10,17 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
 
 
 @ClientEndpoint
 public class AgentClient {
 
-	private final String uri = "ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy";
+	private final String uri = "ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=HWPOS002";
 	private Session session;
 	private ConfigGUI clientWindow;
-	private static final Logger log = LoggerFactory.getLogger(AgentClient.class);
+	private static final Log log = LogFactory.getLog(ConfigGUI.class);
 	
 	public AgentClient(ConfigGUI cw) {
 		clientWindow = cw;

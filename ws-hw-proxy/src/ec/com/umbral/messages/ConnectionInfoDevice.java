@@ -6,8 +6,8 @@ public class ConnectionInfoDevice {
 
     private final ConnectionInfo connectionInfo;
 
-    public ConnectionInfoDevice(String device, List<String> activeDevs) {
-        this.connectionInfo = new ConnectionInfo(device, activeDevs);
+    public ConnectionInfoDevice(String dev, List<String> activeDevs) {
+        this.connectionInfo = new ConnectionInfo(dev, activeDevs);
     }
 
     public ConnectionInfo getConnectionInfo() {
@@ -16,22 +16,20 @@ public class ConnectionInfoDevice {
 
     class ConnectionInfo {
 
-        private final String dev;
-
+        private final String device;
         private final List<String> activeDevs;
-
         private ConnectionInfo(String dev, List<String> activeDevs) {
-            this.dev = dev;
+            this.device = dev;
             this.activeDevs = activeDevs;
-        }
-
-        public String getDev() {
-            return dev;
         }
 
         public List<String> getActiveDevs() {
             return activeDevs;
         }
+
+		public String getDevice() {
+			return device;
+		}
     }
 
 }

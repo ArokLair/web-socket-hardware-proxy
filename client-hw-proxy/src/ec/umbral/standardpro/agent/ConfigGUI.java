@@ -13,7 +13,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import org.apache.log4j.BasicConfigurator;
+import org.apache.juli.logging.Log;
+import org.apache.juli.logging.LogFactory;
+
 
 public class ConfigGUI extends JFrame {
 
@@ -28,6 +30,8 @@ public class ConfigGUI extends JFrame {
 	private final JTextArea serverMessageText = new JTextArea("");
 	private final AgentClient client;
 
+	private static final Log log = LogFactory.getLog(ConfigGUI.class);
+	
 	public ConfigGUI() {
 		setSize(400, 400);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,7 +65,6 @@ public class ConfigGUI extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		BasicConfigurator.configure();
 		new ConfigGUI();
 	}
 }
