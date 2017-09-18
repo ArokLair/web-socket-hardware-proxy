@@ -19,10 +19,10 @@ public class AgentClient {
 
 	private final String uri = "ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=HWPOS002";
 	private Session session;
-	private POSApp clientWindow;
-	private static final Log log = LogFactory.getLog(POSApp.class);
+	private StandarPROAgentGUI clientWindow;
+	private static final Log log = LogFactory.getLog(StandarPROAgentGUI.class);
 	
-	public AgentClient(POSApp cw) {
+	public AgentClient(StandarPROAgentGUI cw) {
 		clientWindow = cw;
 		try {
 			WebSocketContainer container = ContainerProvider.getWebSocketContainer();
