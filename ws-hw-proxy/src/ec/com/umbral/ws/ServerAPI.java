@@ -5,14 +5,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
-import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
@@ -21,6 +17,8 @@ import org.apache.juli.logging.LogFactory;
 
 import com.google.gson.Gson;
 
+import ec.com.umbral.messages.ConnectionInfoDevice;
+
 @ClientEndpoint
 public class ServerAPI {
 
@@ -28,53 +26,59 @@ public class ServerAPI {
 	private String wsURL;
 	private static final String SERVER_ID = "SERVER";
 	private Gson jsonparse = new Gson();
+	private ConnectionInfoDevice cid;
 	private static final Log log = LogFactory.getLog(ServerAPI.class);
+	// SAMPLE URL =
 	// ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=HWPOS001
+	private Object someObject=new Object();
 
-	// public ServerAPI() {
-	// this.setWsURL("ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID="+SERVER_ID);
-	// }
-	public ServerAPI(String endPointWS) {
+	public ServerAPI() {
+	}
+
+	public void connect(String endPointWS) {
 		WebSocketContainer wsc = ContainerProvider.getWebSocketContainer();
 		try {
 			URI endPointURI = ServerAPI.appendUri(endPointWS, "devID=" + SERVER_ID);
-			wsc.connectToServer(this, endPointURI);
+			this.sesion = wsc.connectToServer(this, endPointURI);
+			synchronized (someObject) {
+				try {
+					someObject.wait();
+				} catch (InterruptedException e) {
+					log.error(e);
+				}
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	@OnOpen
-	public void onOpen(Session sess) {
-		this.sesion = sess;
-		log.info("Abriendo websocket desde el servidor");
-	}
-
-	@OnClose
-	public void onClose(Session sess, CloseReason reason) {
-
-	}
-
 	@OnMessage
-	public void onMessage(String message) {
-		log.debug(message);
+	public void onTextMessage(String message) {
+		this.cid = jsonparse.fromJson(message, ConnectionInfoDevice.class);
+		synchronized (someObject) {
+			someObject.notify();
+		}
+	}
+
+	public void disconnect() {
+		try {
+			this.sesion.close();
+		} catch (IOException e) {
+			log.error(e);
+		}
 	}
 
 	public void sendMessage(String from, String to, String message) {
 		try {
-
 			this.sesion.getBasicRemote().sendText("Hello!");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e);
 		}
 	}
 
-	public List<String> getAciveDevices() {
-		List<String> ret = new ArrayList<String>();
-
-		return ret;
-	}
+	// public List<String> getAciveDevices(){
+	// this.sesion.getBasicRemote().sendText("GET LIST DEVICES");
+	// }
 
 	private static URI appendUri(String uri, String appendQuery) throws URISyntaxException {
 		URI oldUri = new URI(uri);
@@ -98,6 +102,14 @@ public class ServerAPI {
 
 	public void setWsURL(String wsURL) {
 		this.wsURL = wsURL;
+	}
+
+	public ConnectionInfoDevice getCid() {
+		return cid;
+	}
+
+	public void setCid(ConnectionInfoDevice cid) {
+		this.cid = cid;
 	}
 
 }

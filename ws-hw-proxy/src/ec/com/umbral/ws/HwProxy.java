@@ -97,13 +97,11 @@ public class HwProxy {
 		final Collection<HwProxy> otherUsersConnections = getAllChatConnectionsExceptThis();
 		for (HwProxy connection : otherUsersConnections) {
 			try {
-				connection.getSession().getBasicRemote()
-						.sendText(jsonProcessor.toJson(message));
+				connection.getSession().getBasicRemote().sendText(jsonProcessor.toJson(message));
 			} catch (IOException e) {
 				log.error("No se pudo enviar el mensaje", e);
 			}
 		}
-
 	}
 
 	private Collection<HwProxy> getAllChatConnectionsExceptThis() {
