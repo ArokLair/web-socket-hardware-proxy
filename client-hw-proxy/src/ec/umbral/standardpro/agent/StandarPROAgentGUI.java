@@ -1,6 +1,7 @@
 package ec.umbral.standardpro.agent;
 
 import java.awt.AWTException;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -20,11 +21,19 @@ import java.awt.event.WindowStateListener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.text.MessageFormat;
 import java.util.Properties;
 
-import javax.swing.ImageIcon;
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import javax.print.SimpleDoc;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -37,12 +46,18 @@ import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.websocket.ClientEndpoint;
+import javax.websocket.ContainerProvider;
+import javax.websocket.OnMessage;
+import javax.websocket.Session;
+import javax.websocket.WebSocketContainer;
 
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 
+import com.google.gson.Gson;
+
+@ClientEndpoint
 public class StandarPROAgentGUI extends JFrame {
 
 	/**
@@ -60,6 +75,11 @@ public class StandarPROAgentGUI extends JFrame {
 
 	private SystemTray tray;
 	private TrayIcon trayIcon;
+	private JLabel lblStatusserver;
+	private JLabel lblStatusprinter;
+	private Session session_ws;
+	private PrintService printer;
+	private Gson jsonparse = new Gson();
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -98,6 +118,7 @@ public class StandarPROAgentGUI extends JFrame {
 	 */
 	public StandarPROAgentGUI() {
 
+		// Metodo Agregado por Luis Ulloa
 		setSystemTray();
 
 		setIconImage(Toolkit.getDefaultToolkit()
@@ -140,7 +161,7 @@ public class StandarPROAgentGUI extends JFrame {
 		gbc_lblEstatusDeLa.gridy = 0;
 		contentPane.add(lblEstatusDeLa, gbc_lblEstatusDeLa);
 
-		JLabel lblStatusserver = new JLabel("STATUS_SERVER");
+		lblStatusserver = new JLabel("STATUS_SERVER");
 		GridBagConstraints gbc_lblStatusserver = new GridBagConstraints();
 		gbc_lblStatusserver.anchor = GridBagConstraints.NORTHEAST;
 		gbc_lblStatusserver.insets = new Insets(0, 0, 5, 0);
@@ -158,7 +179,7 @@ public class StandarPROAgentGUI extends JFrame {
 		gbc_lblEstatusImpre.gridy = 1;
 		contentPane.add(lblEstatusImpre, gbc_lblEstatusImpre);
 
-		JLabel lblStatusprinter = new JLabel("STATUS_PRINTER");
+		lblStatusprinter = new JLabel("STATUS_PRINTER");
 		GridBagConstraints gbc_lblStatusprinter = new GridBagConstraints();
 		gbc_lblStatusprinter.anchor = GridBagConstraints.NORTHEAST;
 		gbc_lblStatusprinter.insets = new Insets(0, 0, 5, 0);
@@ -188,6 +209,15 @@ public class StandarPROAgentGUI extends JFrame {
 		contentPane.add(scrollPane, gbc_scrollPane);
 
 		JButton btnReiniciarConexion = new JButton("Reiniciar conexion");
+		btnReiniciarConexion.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+//				conecta_ws();
+//				conecta_impresora();
+				
+				
+				
+			}
+		});
 		GridBagConstraints gbc_btnReiniciarConexion = new GridBagConstraints();
 		gbc_btnReiniciarConexion.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnReiniciarConexion.anchor = GridBagConstraints.NORTH;
@@ -220,7 +250,11 @@ public class StandarPROAgentGUI extends JFrame {
 		gbc_btnSalir.gridy = 4;
 		contentPane.add(btnSalir, gbc_btnSalir);
 
+		// Metodos Agregado por Luis Ulloa
 		loadProperties();
+		conecta_ws();
+		conecta_impresora();
+
 	}
 
 	private void setSystemTray() {
@@ -259,7 +293,7 @@ public class StandarPROAgentGUI extends JFrame {
 						setVisible(false);
 						log.info("added to SystemTray");
 					} catch (AWTException ex) {
-						log.error("unable to add to tray",ex);
+						log.error("unable to add to tray", ex);
 					}
 				}
 				if (e.getNewState() == 7) {
@@ -268,7 +302,7 @@ public class StandarPROAgentGUI extends JFrame {
 						setVisible(false);
 						log.info("added to SystemTray");
 					} catch (AWTException ex) {
-						log.error("unable to add to system tray",ex);
+						log.error("unable to add to system tray", ex);
 					}
 				}
 				if (e.getNewState() == MAXIMIZED_BOTH) {
@@ -304,24 +338,69 @@ public class StandarPROAgentGUI extends JFrame {
 		}
 	}
 
+	private void conecta_ws() {
+		try {
+			if (session_ws == null) {
+				WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+				session_ws = container.connectToServer(this, new URI(getParam().getSERVER_URL()));
+				setInfoMessage("OK", getLblStatusserver());
+			}
+		} catch (Exception ex) {
+			setErroMessage("ERROR: 107", getLblStatusserver());
+			log.error("Error 107 al conectar al ws :", ex);
+		}
+	}
+
+	private void conecta_impresora() {
+		PrintService[] ps = PrintServiceLookup.lookupPrintServices(null, null);
+		for (PrintService printService : ps) {
+			if (printService.getName().equals(getParam().getPrinterName())) {
+				printer = printService;
+				break;
+			}
+		}
+		if (printer != null) {
+			setInfoMessage("OK", getLblStatusprinter());
+		} else {
+			setErroMessage("ERROR: 109", getLblStatusserver());
+			log.error("Error 109: No hay impresora definida con ese nombre revisar la configuracion");
+		}
+
+	}
+
+	private void setInfoMessage(String text, JLabel label) {
+		label.setForeground(Color.BLUE);
+		label.setText(text);
+	}
+
+	private void setErroMessage(String text, JLabel label) {
+		label.setForeground(Color.RED);
+		label.setText(text);
+	}
+
+	@OnMessage
+	public void onMessage(String message, Session session) {
+		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
+		if (mid.getMessageInfo() != null) {
+			DocPrintJob job = printer.createPrintJob();
+			String text_to_print = mid.getMessageInfo().getMessage();
+			log.info(text_to_print);
+			DocFlavor flavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
+			Doc doc = new SimpleDoc("Hola Mundo!", flavor, null);
+			try {
+				job.print(doc, null);
+			} catch (PrintException e) {
+				log.error(e);
+			}
+		}
+	}
+
 	public Parameters getParam() {
 		return param;
 	}
 
 	public void setParam(Parameters param) {
 		this.param = param;
-	}
-
-	// Obtain the image URL
-	protected static Image createImage(String path, String description) {
-		URL imageURL = StandarPROAgentGUI.class.getResource(path);
-
-		if (imageURL == null) {
-			log.error("Resource not found: " + path);
-			return null;
-		} else {
-			return (new ImageIcon(imageURL, description)).getImage();
-		}
 	}
 
 	private class SwingAction extends AbstractAction {
@@ -336,7 +415,21 @@ public class StandarPROAgentGUI extends JFrame {
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			dispose();
+			// dispose();
+			try {
+				session_ws.close();
+			} catch (IOException e1) {
+				log.error(e1);
+			}
+			System.exit(0);
 		}
+	}
+
+	public JLabel getLblStatusserver() {
+		return lblStatusserver;
+	}
+
+	public JLabel getLblStatusprinter() {
+		return lblStatusprinter;
 	}
 }
