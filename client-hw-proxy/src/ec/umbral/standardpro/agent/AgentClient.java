@@ -40,7 +40,7 @@ public class AgentClient {
 
 	@OnMessage
 	public void onMessage(String message, Session session) {
-		clientWindow.writeServerMessage(message);
+		
 	}
 
 	public void sendMessage(String message) {
