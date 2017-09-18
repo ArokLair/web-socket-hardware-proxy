@@ -76,11 +76,11 @@ public class HwProxy {
 			try {
 				destinationConnection.getSession().getBasicRemote().sendText(jsonMessage);
 			} catch (IOException e) {
-				log.error("Error de IO");
+				log.error("Error de IO",e);
 				e.printStackTrace();
 			}
 		} else {
-			log.warn("Se está intentando enviar un mensaje a un device no conectado");
+			log.warn("Se está intentando enviar un mensaje a un device no conectado:"+mess);
 		}
 	}
 

@@ -13,13 +13,12 @@
 	<h1>Test Page!</h1>
 	
 	<%
-		ServerAPI api = new ServerAPI();
-		api.connect("ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy");
-		out.write("<h2>"+api.getCid().toString()+"</h2>\n");
-// 		for(String dev : devices) {
-// 			out.write(dev+"<br/>");
-// 		}
-		api.disconnect();
+// 		ServerAPI api = new ServerAPI();
+// 		api.connect("ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy");
+// 		out.write("<h2>"+api.getAciveDevices()+"</h2>\n");
+// 		api.sendMessage("[SERVER]", "[HWPOS001]", "PRINTING TO DEVICE");
+// 		//api.sendFile("[SERVER]", "[HWPOS001]",File f);
+// 		api.disconnect();
 	%>
 	
 </body>

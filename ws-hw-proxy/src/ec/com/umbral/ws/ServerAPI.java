@@ -3,8 +3,6 @@ package ec.com.umbral.ws;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
@@ -18,6 +16,7 @@ import org.apache.juli.logging.LogFactory;
 import com.google.gson.Gson;
 
 import ec.com.umbral.messages.ConnectionInfoDevice;
+import ec.com.umbral.messages.MessageInfoDevice;
 
 @ClientEndpoint
 public class ServerAPI {
@@ -30,7 +29,7 @@ public class ServerAPI {
 	private static final Log log = LogFactory.getLog(ServerAPI.class);
 	// SAMPLE URL =
 	// ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=HWPOS001
-	private Object someObject=new Object();
+	private Object someObject = new Object();
 
 	public ServerAPI() {
 	}
@@ -70,15 +69,16 @@ public class ServerAPI {
 
 	public void sendMessage(String from, String to, String message) {
 		try {
-			this.sesion.getBasicRemote().sendText("Hello!");
+			MessageInfoDevice msg = new MessageInfoDevice(from, to, message);
+			this.sesion.getBasicRemote().sendText(jsonparse.toJson(msg));
 		} catch (IOException e) {
 			log.error(e);
 		}
 	}
 
-	// public List<String> getAciveDevices(){
-	// this.sesion.getBasicRemote().sendText("GET LIST DEVICES");
-	// }
+	public String getAciveDevices() {
+		return jsonparse.toJson(this.cid.getConnectionInfo());
+	}
 
 	private static URI appendUri(String uri, String appendQuery) throws URISyntaxException {
 		URI oldUri = new URI(uri);
@@ -102,14 +102,6 @@ public class ServerAPI {
 
 	public void setWsURL(String wsURL) {
 		this.wsURL = wsURL;
-	}
-
-	public ConnectionInfoDevice getCid() {
-		return cid;
-	}
-
-	public void setCid(ConnectionInfoDevice cid) {
-		this.cid = cid;
 	}
 
 }
