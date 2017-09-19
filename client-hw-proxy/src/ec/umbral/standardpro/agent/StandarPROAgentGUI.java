@@ -16,6 +16,7 @@ import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.io.FileInputStream;
@@ -43,9 +44,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
 import javax.websocket.OnMessage;
@@ -80,6 +83,7 @@ public class StandarPROAgentGUI extends JFrame {
 	private Session session_ws;
 	private PrintService printer;
 	private Gson jsonparse = new Gson();
+	private JTextArea textArea;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -125,7 +129,7 @@ public class StandarPROAgentGUI extends JFrame {
 				.getImage(StandarPROAgentGUI.class.getResource("/javax/swing/plaf/metal/icons/ocean/computer.gif")));
 		setResizable(false);
 		setTitle("StandarPRO Agent");
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 469, 256);
 
 		JMenuBar menuBar = new JMenuBar();
@@ -135,6 +139,21 @@ public class StandarPROAgentGUI extends JFrame {
 		menuBar.add(mnArchivo);
 
 		JMenuItem mntmParametros = new JMenuItem("Parametros");
+		mntmParametros.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SwingUtilities.invokeLater(new Runnable() {
+
+					@Override
+					public void run() {
+						StandarPROParamGUI paragui = new StandarPROParamGUI(StandarPROAgentGUI.this, getParam());
+						if (paragui.doModal() == StandarPROParamGUI.ID_OK) {
+
+						}
+
+					}
+				});
+			}
+		});
 		mnArchivo.add(mntmParametros);
 
 		JMenuItem mntmSalir = new JMenuItem("Salir");
@@ -189,15 +208,29 @@ public class StandarPROAgentGUI extends JFrame {
 
 		JLabel lblConsolaDeConexion = new JLabel("Consola de conexi\u00F3n:");
 		GridBagConstraints gbc_lblConsolaDeConexion = new GridBagConstraints();
+		gbc_lblConsolaDeConexion.gridwidth = 2;
 		gbc_lblConsolaDeConexion.anchor = GridBagConstraints.NORTHWEST;
 		gbc_lblConsolaDeConexion.insets = new Insets(0, 0, 5, 5);
 		gbc_lblConsolaDeConexion.gridx = 0;
 		gbc_lblConsolaDeConexion.gridy = 2;
 		contentPane.add(lblConsolaDeConexion, gbc_lblConsolaDeConexion);
 
+		JButton btnTestPrint = new JButton("Test Print!");
+		btnTestPrint.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				printDocument("This is demo printing textFile Device.....");
+			}
+		});
+		GridBagConstraints gbc_btnTestPrint = new GridBagConstraints();
+		gbc_btnTestPrint.anchor = GridBagConstraints.EAST;
+		gbc_btnTestPrint.insets = new Insets(0, 0, 5, 0);
+		gbc_btnTestPrint.gridx = 2;
+		gbc_btnTestPrint.gridy = 2;
+		contentPane.add(btnTestPrint, gbc_btnTestPrint);
+
 		JScrollPane scrollPane = new JScrollPane();
 
-		JTextArea textArea = new JTextArea();
+		textArea = new JTextArea();
 		textArea.setEditable(false);
 		scrollPane.setViewportView(textArea);
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
@@ -211,11 +244,7 @@ public class StandarPROAgentGUI extends JFrame {
 		JButton btnReiniciarConexion = new JButton("Reiniciar conexion");
 		btnReiniciarConexion.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-//				conecta_ws();
-//				conecta_impresora();
-				
-				
-				
+				reset_conexion();
 			}
 		});
 		GridBagConstraints gbc_btnReiniciarConexion = new GridBagConstraints();
@@ -257,6 +286,10 @@ public class StandarPROAgentGUI extends JFrame {
 
 	}
 
+	private void printinfoTextArea(String message) {
+		textArea.append(message);
+	}
+	
 	private void setSystemTray() {
 		if (SystemTray.isSupported()) {
 			log.info("system tray supported");
@@ -265,6 +298,13 @@ public class StandarPROAgentGUI extends JFrame {
 			ActionListener exitListener = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					log.info("Exiting....");
+					try {
+						if (session_ws.isOpen()) {
+							session_ws.close();
+						}
+					} catch (IOException e1) {
+						log.error(e1);
+					}
 					System.exit(0);
 				}
 			};
@@ -314,6 +354,18 @@ public class StandarPROAgentGUI extends JFrame {
 					tray.remove(trayIcon);
 					setVisible(true);
 					log.info("Tray icon removed");
+				}
+			}
+		});
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				try {
+					if (session_ws.isOpen()) {
+						session_ws.close();
+					}
+				} catch (IOException e1) {
+					log.error(e1);
 				}
 			}
 		});
@@ -368,6 +420,17 @@ public class StandarPROAgentGUI extends JFrame {
 
 	}
 
+	private void reset_conexion() {
+		try {
+			this.session_ws.close();
+			this.printer = null;
+			conecta_ws();
+			conecta_impresora();
+		} catch (IOException e) {
+			log.error(e);
+		}
+	}
+
 	private void setInfoMessage(String text, JLabel label) {
 		label.setForeground(Color.BLUE);
 		label.setText(text);
@@ -382,16 +445,30 @@ public class StandarPROAgentGUI extends JFrame {
 	public void onMessage(String message, Session session) {
 		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
 		if (mid.getMessageInfo() != null) {
-			DocPrintJob job = printer.createPrintJob();
-			String text_to_print = mid.getMessageInfo().getMessage();
-			log.info(text_to_print);
-			DocFlavor flavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
-			Doc doc = new SimpleDoc("Hola Mundo!", flavor, null);
-			try {
-				job.print(doc, null);
-			} catch (PrintException e) {
-				log.error(e);
+			printDocument(mid.getMessageInfo().getMessage());
+			if(getTextArea().getLineCount()>10) {
+				int end;
+				try {
+					end = getTextArea().getLineEndOffset(0);
+					getTextArea().replaceRange("", 0, end);
+				} catch (BadLocationException e) {
+					log.error(e);
+				} 
 			}
+			printinfoTextArea("Printing to "+getParam().getPrinterName()+"....\n");
+		}
+	}
+
+	private void printDocument(String message) {
+		String text_to_print = message;
+		log.info(text_to_print);
+		DocPrintJob job = printer.createPrintJob();
+		DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+		Doc doc = new SimpleDoc(text_to_print.getBytes(), flavor, null);
+		try {
+			job.print(doc, null);
+		} catch (PrintException e) {
+			log.error(e);
 		}
 	}
 
@@ -415,13 +492,14 @@ public class StandarPROAgentGUI extends JFrame {
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			// dispose();
 			try {
-				session_ws.close();
+				if (session_ws.isOpen()) {
+					session_ws.close();
+				}
 			} catch (IOException e1) {
 				log.error(e1);
 			}
-			System.exit(0);
+			dispose();
 		}
 	}
 
@@ -431,5 +509,8 @@ public class StandarPROAgentGUI extends JFrame {
 
 	public JLabel getLblStatusprinter() {
 		return lblStatusprinter;
+	}
+	public JTextArea getTextArea() {
+		return textArea;
 	}
 }

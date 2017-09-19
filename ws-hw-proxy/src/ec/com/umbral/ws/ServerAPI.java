@@ -41,7 +41,7 @@ public class ServerAPI {
 			this.sesion = wsc.connectToServer(this, endPointURI);
 			synchronized (someObject) {
 				try {
-					someObject.wait();
+					someObject.wait(2000);
 				} catch (InterruptedException e) {
 					log.error(e);
 				}

@@ -131,7 +131,7 @@ public class HwProxy {
 
 	@OnError
 	public void onError(Throwable t) throws Throwable {
-		log.error("Error: " + t.toString(), t);
+		log.error("Error Disconected client: " + t.toString(), t);
 	}
 
 	public String getDevice() {
