@@ -60,6 +60,9 @@ import org.apache.juli.logging.LogFactory;
 
 import com.google.gson.Gson;
 
+import it.sauronsoftware.junique.AlreadyLockedException;
+import it.sauronsoftware.junique.JUnique;
+
 @ClientEndpoint
 public class StandarPROAgentGUI extends JFrame {
 
@@ -87,42 +90,46 @@ public class StandarPROAgentGUI extends JFrame {
 
 	public static void main(String[] args) {
 
-		// YOUR CODE
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					// Try to get LOCK //
-					if (!AppLock.setLock("MY_CUSTOM_LOCK_KEY")) {
-						throw new RuntimeException("Only one application instance may run at the same time!");
-					}
-
-					/* Use an appropriate Look and Feel */
+		String appId = "StandarPROAGent";
+		boolean alreadyRunning;
+		try {
+			JUnique.acquireLock(appId);
+			alreadyRunning = false;
+		} catch (AlreadyLockedException e) {
+			alreadyRunning = true;
+		}
+		if (!alreadyRunning) {
+			// Start sequence here
+			EventQueue.invokeLater(new Runnable() {
+				public void run() {
 					try {
-						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					} catch (UnsupportedLookAndFeelException ex) {
-						ex.printStackTrace();
-					} catch (IllegalAccessException ex) {
-						ex.printStackTrace();
-					} catch (InstantiationException ex) {
-						ex.printStackTrace();
-					} catch (ClassNotFoundException ex) {
-						ex.printStackTrace();
+						/* Use an appropriate Look and Feel */
+						try {
+							UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+						} catch (UnsupportedLookAndFeelException ex) {
+							ex.printStackTrace();
+						} catch (IllegalAccessException ex) {
+							ex.printStackTrace();
+						} catch (InstantiationException ex) {
+							ex.printStackTrace();
+						} catch (ClassNotFoundException ex) {
+							ex.printStackTrace();
+						}
+						/* Turn off metal's use of bold fonts */
+						UIManager.put("swing.boldMetal", Boolean.FALSE);
+						StandarPROAgentGUI frame = new StandarPROAgentGUI();
+						frame.setLocationRelativeTo(null);
+						frame.setVisible(true);
+						// AppLock.releaseLock(); // Release lock
+					} catch (Exception e) {
+						log.error("Error en Cargar formulario", e);
 					}
-					/* Turn off metal's use of bold fonts */
-					UIManager.put("swing.boldMetal", Boolean.FALSE);
-					StandarPROAgentGUI frame = new StandarPROAgentGUI();
-					frame.setLocationRelativeTo(null);
-					frame.setVisible(true);
-
-				} catch (Exception e) {
-					log.error("Error en Cargar formulario", e);
 				}
-				finally {
-					AppLock.releaseLock(); // Release lock
-				}
-			}
-		});
-
+			});
+		}else {
+			log.warn("Ya esta ejecutando una instancia del programa");
+			log.info("Saliendo....");
+		}
 	}
 
 	/**
@@ -410,7 +417,9 @@ public class StandarPROAgentGUI extends JFrame {
 			}
 		} catch (Exception ex) {
 			setErroMessage("ERROR: 107", getLblStatusserver());
-			log.error("Error 107 al conectar al ws :", ex);
+			String mes = "Error 107: Problemas al conectar al servidor \n";
+			log.error(mes, ex);
+			getTextArea().append(mes);
 		}
 	}
 
@@ -425,8 +434,10 @@ public class StandarPROAgentGUI extends JFrame {
 		if (printer != null) {
 			setInfoMessage("OK", getLblStatusprinter());
 		} else {
-			setErroMessage("ERROR: 109", getLblStatusserver());
-			log.error("Error 109: No hay impresora definida con ese nombre revisar la configuracion");
+			setErroMessage("ERROR: 109", getLblStatusprinter());
+			String mes="Error 109: No hay impresora definida con ese nombre revisar la configuracion\n";
+			log.error(mes);
+			getTextArea().append(mes);
 		}
 
 	}
