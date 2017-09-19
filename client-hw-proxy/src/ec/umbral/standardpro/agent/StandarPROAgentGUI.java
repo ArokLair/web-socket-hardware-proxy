@@ -86,10 +86,15 @@ public class StandarPROAgentGUI extends JFrame {
 	private JTextArea textArea;
 
 	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
 
+		// YOUR CODE
+		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+					// Try to get LOCK //
+					if (!AppLock.setLock("MY_CUSTOM_LOCK_KEY")) {
+						throw new RuntimeException("Only one application instance may run at the same time!");
+					}
 
 					/* Use an appropriate Look and Feel */
 					try {
@@ -112,9 +117,12 @@ public class StandarPROAgentGUI extends JFrame {
 				} catch (Exception e) {
 					log.error("Error en Cargar formulario", e);
 				}
+				finally {
+					AppLock.releaseLock(); // Release lock
+				}
 			}
-
 		});
+
 	}
 
 	/**
@@ -289,7 +297,7 @@ public class StandarPROAgentGUI extends JFrame {
 	private void printinfoTextArea(String message) {
 		textArea.append(message);
 	}
-	
+
 	private void setSystemTray() {
 		if (SystemTray.isSupported()) {
 			log.info("system tray supported");
@@ -326,6 +334,7 @@ public class StandarPROAgentGUI extends JFrame {
 			System.out.println("system tray not supported");
 		}
 		addWindowStateListener(new WindowStateListener() {
+
 			public void windowStateChanged(WindowEvent e) {
 				if (e.getNewState() == ICONIFIED) {
 					try {
@@ -361,8 +370,10 @@ public class StandarPROAgentGUI extends JFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				try {
-					if (session_ws.isOpen()) {
-						session_ws.close();
+					if (session_ws != null) {
+						if (session_ws.isOpen()) {
+							session_ws.close();
+						}
 					}
 				} catch (IOException e1) {
 					log.error(e1);
@@ -446,16 +457,16 @@ public class StandarPROAgentGUI extends JFrame {
 		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
 		if (mid.getMessageInfo() != null) {
 			printDocument(mid.getMessageInfo().getMessage());
-			if(getTextArea().getLineCount()>10) {
+			if (getTextArea().getLineCount() > 10) {
 				int end;
 				try {
 					end = getTextArea().getLineEndOffset(0);
 					getTextArea().replaceRange("", 0, end);
 				} catch (BadLocationException e) {
 					log.error(e);
-				} 
+				}
 			}
-			printinfoTextArea("Printing to "+getParam().getPrinterName()+"....\n");
+			printinfoTextArea("Printing to " + getParam().getPrinterName() + "....\n");
 		}
 	}
 
@@ -493,8 +504,10 @@ public class StandarPROAgentGUI extends JFrame {
 
 		public void actionPerformed(ActionEvent e) {
 			try {
-				if (session_ws.isOpen()) {
-					session_ws.close();
+				if (session_ws != null) {
+					if (session_ws.isOpen()) {
+						session_ws.close();
+					}
 				}
 			} catch (IOException e1) {
 				log.error(e1);
@@ -510,6 +523,7 @@ public class StandarPROAgentGUI extends JFrame {
 	public JLabel getLblStatusprinter() {
 		return lblStatusprinter;
 	}
+
 	public JTextArea getTextArea() {
 		return textArea;
 	}
