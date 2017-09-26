@@ -29,6 +29,7 @@ public class HwProxy {
 	private static final Map<String, HwProxy> connections = new HashMap<String, HwProxy>();
 	// private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
 	private static final Log log = LogFactory.getLog(HwProxy.class);
+	private static final String HWPROXY_ID = "[HWPROXY]";
 
 	private String connectionId = new String();
 
@@ -55,32 +56,29 @@ public class HwProxy {
 		sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.DISCONNECTED));
 		connections.remove(connectionId);
 	}
+
 	/**
-	 * Struct Json Message
-	 * {
-     *		messageInfo : 
-     *		{
-     *   		from_dev : '[SERVER]',
-     *   		to_dev : '[HWPOS001]',
-     *   		message : 'PRINT_FILE'
-     *		}
-	 *	}
+	 * Struct Json Message { messageInfo : { from_dev : '[SERVER]', to_dev :
+	 * '[HWPOS001]', message : 'PRINT_FILE' } }
+	 * 
 	 * @param mess
 	 */
 	@OnMessage
-	public void onTextMessage(String mess) {
+	public void onTextMessage(String mess, Session sesion) {
 		final MessageInfoDevice message = jsonProcessor.fromJson(mess, MessageInfoDevice.class);
 		final HwProxy destinationConnection = getDestinationDevConnection(message.getMessageInfo().getTo_dev());
-		if (destinationConnection != null) {
-			final String jsonMessage = jsonProcessor.toJson(message);
-			try {
+		try {
+			if (destinationConnection != null) {
+				final String jsonMessage = jsonProcessor.toJson(message);
 				destinationConnection.getSession().getBasicRemote().sendText(jsonMessage);
-			} catch (IOException e) {
-				log.error("Error de IO",e);
-				e.printStackTrace();
+			} else {
+				final String info_message = "Se está intentando enviar un mensaje a un device no conectado:" + mess;
+				log.warn(info_message);
+				sesion.getBasicRemote().sendText(jsonProcessor.toJson(
+						new MessageInfoDevice(HWPROXY_ID, message.getMessageInfo().getFrom_dev(), info_message)));
 			}
-		} else {
-			log.warn("Se está intentando enviar un mensaje a un device no conectado:"+mess);
+		} catch (IOException e) {
+			log.error("Error de IO", e);
 		}
 	}
 

@@ -67,13 +67,9 @@ public class ServerAPI {
 		}
 	}
 
-	public void sendMessage(String from, String to, String message) {
-		try {
+	public void sendMessage(String from, String to, String message) throws IOException {
 			MessageInfoDevice msg = new MessageInfoDevice(from, to, message);
 			this.sesion.getBasicRemote().sendText(jsonparse.toJson(msg));
-		} catch (IOException e) {
-			log.error(e);
-		}
 	}
 
 	public String getAciveDevices() {
