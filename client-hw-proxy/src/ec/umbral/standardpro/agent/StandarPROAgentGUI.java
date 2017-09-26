@@ -23,7 +23,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.Properties;
 
 import javax.print.Doc;
@@ -126,7 +125,7 @@ public class StandarPROAgentGUI extends JFrame {
 					}
 				}
 			});
-		}else {
+		} else {
 			log.warn("Ya esta ejecutando una instancia del programa");
 			log.info("Saliendo....");
 		}
@@ -307,20 +306,11 @@ public class StandarPROAgentGUI extends JFrame {
 
 	private void setSystemTray() {
 		if (SystemTray.isSupported()) {
-			log.info("system tray supported");
 			tray = SystemTray.getSystemTray();
 			Image image = Toolkit.getDefaultToolkit().getImage(StandarPROAgentGUI.class.getResource("images/run.gif"));
 			ActionListener exitListener = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					log.info("Exiting....");
-					try {
-						if (session_ws.isOpen()) {
-							session_ws.close();
-						}
-					} catch (IOException e1) {
-						log.error(e1);
-					}
-					System.exit(0);
+					salir();
 				}
 			};
 			PopupMenu popup = new PopupMenu();
@@ -347,7 +337,6 @@ public class StandarPROAgentGUI extends JFrame {
 					try {
 						tray.add(trayIcon);
 						setVisible(false);
-						log.info("added to SystemTray");
 					} catch (AWTException ex) {
 						log.error("unable to add to tray", ex);
 					}
@@ -356,7 +345,6 @@ public class StandarPROAgentGUI extends JFrame {
 					try {
 						tray.add(trayIcon);
 						setVisible(false);
-						log.info("added to SystemTray");
 					} catch (AWTException ex) {
 						log.error("unable to add to system tray", ex);
 					}
@@ -364,27 +352,17 @@ public class StandarPROAgentGUI extends JFrame {
 				if (e.getNewState() == MAXIMIZED_BOTH) {
 					tray.remove(trayIcon);
 					setVisible(true);
-					log.info("Tray icon removed");
 				}
 				if (e.getNewState() == NORMAL) {
 					tray.remove(trayIcon);
 					setVisible(true);
-					log.info("Tray icon removed");
 				}
 			}
 		});
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
-				try {
-					if (session_ws != null) {
-						if (session_ws.isOpen()) {
-							session_ws.close();
-						}
-					}
-				} catch (IOException e1) {
-					log.error(e1);
-				}
+				salir();
 			}
 		});
 
@@ -397,10 +375,7 @@ public class StandarPROAgentGUI extends JFrame {
 			properties.load(is);
 			String devID = properties.getProperty("DEVICEID");
 			String printer = properties.getProperty("PRINTER_NAME");
-			String WS_URL = MessageFormat.format(
-					properties.getProperty("URL_HW_PROXY",
-							"ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy?devID=NOIDDEV"),
-					properties.getProperty("DEVICEID"));
+			String WS_URL = properties.getProperty("URL_HW_PROXY");
 			param = new Parameters(devID, WS_URL, printer);
 			is.close();
 		} catch (IOException e) {
@@ -435,7 +410,7 @@ public class StandarPROAgentGUI extends JFrame {
 			setInfoMessage("OK", getLblStatusprinter());
 		} else {
 			setErroMessage("ERROR: 109", getLblStatusprinter());
-			String mes="Error 109: No hay impresora definida con ese nombre revisar la configuracion\n";
+			String mes = "Error 109: No hay impresora definida con ese nombre revisar la configuracion\n";
 			log.error(mes);
 			getTextArea().append(mes);
 		}
@@ -514,17 +489,22 @@ public class StandarPROAgentGUI extends JFrame {
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			try {
-				if (session_ws != null) {
-					if (session_ws.isOpen()) {
-						session_ws.close();
-					}
-				}
-			} catch (IOException e1) {
-				log.error(e1);
-			}
-			dispose();
+			salir();
 		}
+	}
+
+	private void salir() {
+		try {
+			if (session_ws != null) {
+				if (session_ws.isOpen()) {
+					session_ws.close();
+				}
+			}
+		} catch (IOException e1) {
+			log.error(e1);
+		}
+		dispose();
+		System.exit(0);
 	}
 
 	public JLabel getLblStatusserver() {

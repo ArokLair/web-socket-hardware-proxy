@@ -212,10 +212,9 @@ public class StandarPROParamGUI extends JDialog {
 			try {
 				InputStream is = new FileInputStream("conf.properties");
 				properties.load(is);
-				String oldDevice=properties.getProperty("DEVICEID");
 				properties.put("DEVICEID", parametros.getDeviceID());
 				properties.put("PRINTER_NAME", parametros.getPrinterName());
-				properties.put("URL_HW_PROXY", parametros.getSERVER_URL().replaceAll(oldDevice, "{0}"));
+				properties.put("URL_HW_PROXY", parametros.getSERVER_URL());
 				FileWriter writer = new FileWriter("conf.properties");
 				properties.store(writer, "Umbral S.A.");
 				writer.close();
