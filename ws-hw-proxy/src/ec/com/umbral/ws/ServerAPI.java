@@ -23,7 +23,7 @@ public class ServerAPI {
 
 	private Session sesion;
 	private String wsURL;
-	private static final String SERVER_ID = "SERVER";
+	private static final String SERVER_ID = "[SERVER]";
 	private Gson jsonparse = new Gson();
 	private ConnectionInfoDevice cid;
 	private static final Log log = LogFactory.getLog(ServerAPI.class);
@@ -53,7 +53,13 @@ public class ServerAPI {
 
 	@OnMessage
 	public void onTextMessage(String message) {
-		this.cid = jsonparse.fromJson(message, ConnectionInfoDevice.class);
+		cid = jsonparse.fromJson(message, ConnectionInfoDevice.class);
+		if(cid.getConnectionInfo()==null) {
+			MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
+			if(mid.getMessageInfo().getFrom_dev().equals(HwProxy.HWPROXY_ID)) {
+				someObject=new Exception(mid.getMessageInfo().getMessage());
+			}
+		}
 		synchronized (someObject) {
 			someObject.notify();
 		}
@@ -67,9 +73,19 @@ public class ServerAPI {
 		}
 	}
 
-	public void sendMessage(String from, String to, String message) throws IOException {
+	public void sendMessage(String from, String to, String message) throws Exception {
 			MessageInfoDevice msg = new MessageInfoDevice(from, to, message);
 			this.sesion.getBasicRemote().sendText(jsonparse.toJson(msg));
+			synchronized (someObject) {
+				try {
+					someObject.wait(2000);
+				} catch (InterruptedException e) {
+					log.error(e);
+				}
+			}
+			if(someObject instanceof Exception) {
+				throw (Exception)someObject;
+			}
 	}
 
 	public String getAciveDevices() {

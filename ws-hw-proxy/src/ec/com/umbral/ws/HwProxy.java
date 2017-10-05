@@ -29,7 +29,7 @@ public class HwProxy {
 	private static final Map<String, HwProxy> connections = new HashMap<String, HwProxy>();
 	// private static final Logger log = LoggerFactory.getLogger(HwProxy.class);
 	private static final Log log = LogFactory.getLog(HwProxy.class);
-	private static final String HWPROXY_ID = "[HWPROXY]";
+	static final String HWPROXY_ID = "[HWPROXY]";
 
 	private String connectionId = new String();
 
@@ -53,6 +53,7 @@ public class HwProxy {
 
 	@OnClose
 	public void onClose() {
+		log.info("Cerrando la conexion de un cliente....");
 		sendStatusInfoToOtherClients(new StatusInfoDevice(device, StatusInfoDevice.STATUS.DISCONNECTED));
 		connections.remove(connectionId);
 	}

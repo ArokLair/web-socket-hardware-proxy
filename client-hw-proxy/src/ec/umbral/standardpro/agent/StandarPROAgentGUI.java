@@ -49,7 +49,9 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
 import javax.websocket.ClientEndpoint;
+import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
+import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
@@ -385,16 +387,18 @@ public class StandarPROAgentGUI extends JFrame {
 
 	private void conecta_ws() {
 		try {
-			if (session_ws == null) {
+			if (session_ws == null || !session_ws.isOpen()) {
 				WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-				session_ws = container.connectToServer(this, new URI(getParam().getSERVER_URL()));
+				session_ws = container.connectToServer(this, new URI(getParam().getSERVER_URL_DEV()));
 				setInfoMessage("OK", getLblStatusserver());
+				getTextArea().append("Conecting to ..."+getParam().getSERVER_URL_DEV()+"\n");
+				getTextArea().setCaretPosition(0);
 			}
 		} catch (Exception ex) {
 			setErroMessage("ERROR: 107", getLblStatusserver());
 			String mes = "Error 107: Problemas al conectar al servidor \n";
 			log.error(mes, ex);
-			getTextArea().append(mes);
+			getTextArea().append(mes.replace("\n", "") + "cause by " + ex.getMessage() + "\n");
 		}
 	}
 
@@ -419,12 +423,16 @@ public class StandarPROAgentGUI extends JFrame {
 
 	private void reset_conexion() {
 		try {
-			this.session_ws.close();
+			CloseReason closeReason = new CloseReason(CloseReason.CloseCodes.NO_STATUS_CODE, "Exitig app");
+			getTextArea().append("Reseting connection\n");
+			if(this.session_ws!=null && this.session_ws.isOpen()) {
+				this.session_ws.close(closeReason);
+			}
 			this.printer = null;
 			conecta_ws();
 			conecta_impresora();
 		} catch (IOException e) {
-			log.error(e);
+			log.error("Error al cerrar la conexion...",e);
 		}
 	}
 
@@ -438,6 +446,16 @@ public class StandarPROAgentGUI extends JFrame {
 		label.setText(text);
 	}
 
+	@OnClose
+	public void onClose(Session session, CloseReason closeReason) {
+		String message=String.format("Session %s close because of %s", session.getId(), closeReason); 
+	    log.info(message);
+	    if(closeReason.getCloseCode()==CloseReason.CloseCodes.GOING_AWAY) {
+	    	setErroMessage("ERROR " + closeReason.getCloseCode().getCode(), lblStatusserver);
+	    }
+	    printinfoTextArea(message+"\n");
+	}
+	
 	@OnMessage
 	public void onMessage(String message, Session session) {
 		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);

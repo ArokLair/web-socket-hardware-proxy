@@ -4,7 +4,7 @@ public class Parameters {
 	private String deviceID;
 	private String SERVER_URL;
 	private String printerName;
-
+	private static final String DEV_PREFIX="?devID=";
 	
 	public Parameters(String deviceID, String sERVER_URL, String printerName) {
 		super();
@@ -29,6 +29,9 @@ public class Parameters {
 	}
 	public void setPrinterName(String printerName) {
 		this.printerName = printerName;
+	}
+	public String getSERVER_URL_DEV() {
+		return this.SERVER_URL+DEV_PREFIX+this.deviceID;
 	}
 	
 	
