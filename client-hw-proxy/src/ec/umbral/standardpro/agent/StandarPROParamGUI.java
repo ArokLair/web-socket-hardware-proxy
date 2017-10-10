@@ -62,12 +62,12 @@ public class StandarPROParamGUI extends JDialog {
 		setResizable(false);
 		setTitle("Configuraci\u00F3n de Parametros");
 		setIconImage(Toolkit.getDefaultToolkit().getImage(StandarPROParamGUI.class.getResource("/javax/swing/plaf/metal/icons/ocean/floppy.gif")));
-		setBounds(100, 100, 602, 219);
+		setBounds(100, 100, 602, 180);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		GridBagLayout gbl_contentPanel = new GridBagLayout();
-		gbl_contentPanel.rowHeights = new int[]{0, 0, 0, 19};
+		gbl_contentPanel.rowHeights = new int[]{0, 0, 0, 0};
 		gbl_contentPanel.columnWidths = new int[]{99, 117, 0};
 		gbl_contentPanel.columnWeights = new double[]{0.0, 1.0, 0.0};
 		gbl_contentPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0};
@@ -92,7 +92,7 @@ public class StandarPROParamGUI extends JDialog {
 			txtDeviceID.setColumns(10);
 		}
 		{
-			JLabel lblImpresora = new JLabel("IMPRESORA");
+			JLabel lblImpresora = new JLabel("IMPRESORA DEFECTO");
 			GridBagConstraints gbc_lblImpresora = new GridBagConstraints();
 			gbc_lblImpresora.anchor = GridBagConstraints.WEST;
 			gbc_lblImpresora.insets = new Insets(0, 0, 5, 5);
@@ -168,7 +168,7 @@ public class StandarPROParamGUI extends JDialog {
 		AutoBinding<Parameters, String, JTextField, String> autoBinding = Bindings.createAutoBinding(UpdateStrategy.READ_WRITE, parametros, parametersBeanProperty, txtDeviceID, jTextFieldBeanProperty);
 		autoBinding.bind();
 		//
-		BeanProperty<Parameters, String> parametersBeanProperty_1 = BeanProperty.create("printerName");
+		BeanProperty<Parameters, String> parametersBeanProperty_1 = BeanProperty.create("dafultPrinter");
 		BeanProperty<JTextField, String> jTextFieldBeanProperty_1 = BeanProperty.create("text");
 		AutoBinding<Parameters, String, JTextField, String> autoBinding_1 = Bindings.createAutoBinding(UpdateStrategy.READ_WRITE, parametros, parametersBeanProperty_1, txtImpresora, jTextFieldBeanProperty_1);
 		autoBinding_1.bind();
@@ -213,7 +213,7 @@ public class StandarPROParamGUI extends JDialog {
 				InputStream is = new FileInputStream("conf.properties");
 				properties.load(is);
 				properties.put("DEVICEID", parametros.getDeviceID());
-				properties.put("PRINTER_NAME", parametros.getPrinterName());
+				properties.put("DEFAULT_PRINTER", parametros.getDafultPrinter());
 				properties.put("URL_HW_PROXY", parametros.getSERVER_URL());
 				FileWriter writer = new FileWriter("conf.properties");
 				properties.store(writer, "Umbral S.A.");

@@ -3,6 +3,8 @@ package ec.com.umbral.ws;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
@@ -73,8 +75,8 @@ public class ServerAPI {
 		}
 	}
 
-	public void sendMessage(String from, String to, String message) throws Exception {
-			MessageInfoDevice msg = new MessageInfoDevice(from, to, message);
+	public void sendMessage(String from, String to, String message,String printer) throws Exception {
+			MessageInfoDevice msg = new MessageInfoDevice(from, to, message,printer);
 			this.sesion.getBasicRemote().sendText(jsonparse.toJson(msg));
 			synchronized (someObject) {
 				try {
@@ -90,6 +92,16 @@ public class ServerAPI {
 
 	public String getAciveDevices() {
 		return jsonparse.toJson(this.cid.getConnectionInfo());
+	}
+	
+	/*
+	 * TODO Por implementar
+	 */
+	public List<String> getPrinters(String dev) throws IOException{
+		List<String> ret = null;
+		this.sesion.getBasicRemote().sendText("getPrinters");
+		
+		return ret;
 	}
 
 	private static URI appendUri(String uri, String appendQuery) throws URISyntaxException {

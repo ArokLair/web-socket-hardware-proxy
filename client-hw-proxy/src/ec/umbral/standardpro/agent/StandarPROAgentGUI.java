@@ -23,6 +23,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.print.Doc;
@@ -53,6 +57,7 @@ import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
@@ -234,7 +239,7 @@ public class StandarPROAgentGUI extends JFrame {
 		JButton btnTestPrint = new JButton("Test Print!");
 		btnTestPrint.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				printDocument("This is demo printing textFile Device.....");
+				printDocument("This is demo printing textFile Device.....", getParam().getDafultPrinter());
 			}
 		});
 		GridBagConstraints gbc_btnTestPrint = new GridBagConstraints();
@@ -376,9 +381,9 @@ public class StandarPROAgentGUI extends JFrame {
 			InputStream is = new FileInputStream("conf.properties");
 			properties.load(is);
 			String devID = properties.getProperty("DEVICEID");
-			String printer = properties.getProperty("PRINTER_NAME");
+			String defaultPrinter = properties.getProperty("DEFAULT_PRINTER");
 			String WS_URL = properties.getProperty("URL_HW_PROXY");
-			param = new Parameters(devID, WS_URL, printer);
+			param = new Parameters(devID, WS_URL, defaultPrinter);
 			is.close();
 		} catch (IOException e) {
 			log.error("Error al cargar archivo conf.properties", e);
@@ -391,7 +396,7 @@ public class StandarPROAgentGUI extends JFrame {
 				WebSocketContainer container = ContainerProvider.getWebSocketContainer();
 				session_ws = container.connectToServer(this, new URI(getParam().getSERVER_URL_DEV()));
 				setInfoMessage("OK", getLblStatusserver());
-				getTextArea().append("Conecting to ..."+getParam().getSERVER_URL_DEV()+"\n");
+				getTextArea().append("Conecting to ..." + getParam().getSERVER_URL_DEV() + "\n");
 				getTextArea().setCaretPosition(0);
 			}
 		} catch (Exception ex) {
@@ -405,7 +410,7 @@ public class StandarPROAgentGUI extends JFrame {
 	private void conecta_impresora() {
 		PrintService[] ps = PrintServiceLookup.lookupPrintServices(null, null);
 		for (PrintService printService : ps) {
-			if (printService.getName().equals(getParam().getPrinterName())) {
+			if (printService.getName().equals(getParam().getDafultPrinter())) {
 				printer = printService;
 				break;
 			}
@@ -421,18 +426,28 @@ public class StandarPROAgentGUI extends JFrame {
 
 	}
 
+	private PrintService conecta_impresora(String name) {
+		PrintService[] ps = PrintServiceLookup.lookupPrintServices(null, null);
+		for (PrintService printService : ps) {
+			if (printService.getName().equals(name)) {
+				return printService;
+			}
+		}
+		return null;
+	}
+
 	private void reset_conexion() {
 		try {
 			CloseReason closeReason = new CloseReason(CloseReason.CloseCodes.NO_STATUS_CODE, "Exitig app");
 			getTextArea().append("Reseting connection\n");
-			if(this.session_ws!=null && this.session_ws.isOpen()) {
+			if (this.session_ws != null && this.session_ws.isOpen()) {
 				this.session_ws.close(closeReason);
 			}
 			this.printer = null;
 			conecta_ws();
 			conecta_impresora();
 		} catch (IOException e) {
-			log.error("Error al cerrar la conexion...",e);
+			log.error("Error al cerrar la conexion...", e);
 		}
 	}
 
@@ -446,21 +461,35 @@ public class StandarPROAgentGUI extends JFrame {
 		label.setText(text);
 	}
 
-	@OnClose
-	public void onClose(Session session, CloseReason closeReason) {
-		String message=String.format("Session %s close because of %s", session.getId(), closeReason); 
-	    log.info(message);
-	    if(closeReason.getCloseCode()==CloseReason.CloseCodes.GOING_AWAY) {
-	    	setErroMessage("ERROR " + closeReason.getCloseCode().getCode(), lblStatusserver);
-	    }
-	    printinfoTextArea(message+"\n");
+	@OnOpen
+	public void onOpen(Session sess) throws IOException {
+		//log.info("Abriendo conexion...");
+	    List <String> printers = Arrays.asList(new String[] {"EPSON LX800","Epson LX300"});
+	    Map<String, Object> map =new HashMap<String, Object>();
+	    map.put("option", "UPDATE");
+	    map.put("session", sess.getId());
+	    map.put("devID", "["+getParam().getDeviceID()+"]");
+	    map.put("printers", printers);
+		sess.getBasicRemote().sendText(jsonparse.toJson(map));
 	}
 	
+	
+	@OnClose
+	public void onClose(Session session, CloseReason closeReason) {
+		String message = String.format("Session %s close because of %s", session.getId(), closeReason);
+		log.info(message);
+		if (closeReason.getCloseCode() == CloseReason.CloseCodes.GOING_AWAY) {
+			setErroMessage("ERROR " + closeReason.getCloseCode().getCode(), lblStatusserver);
+		}
+		printinfoTextArea(message + "\n");
+	}
+
 	@OnMessage
 	public void onMessage(String message, Session session) {
+		log.info(message);
 		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
 		if (mid.getMessageInfo() != null) {
-			printDocument(mid.getMessageInfo().getMessage());
+			printDocument(mid.getMessageInfo().getMessage(), mid.getMessageInfo().getTo_printer());
 			if (getTextArea().getLineCount() > 10) {
 				int end;
 				try {
@@ -470,13 +499,17 @@ public class StandarPROAgentGUI extends JFrame {
 					log.error(e);
 				}
 			}
-			printinfoTextArea("Printing to " + getParam().getPrinterName() + "....\n");
+			printinfoTextArea("Printing to " + mid.getMessageInfo().getTo_printer() + "....\n");
 		}
 	}
 
-	private void printDocument(String message) {
+	private void printDocument(String message, String p) {
 		String text_to_print = message;
 		log.info(text_to_print);
+		PrintService ps = conecta_impresora(p);
+		if (ps != null) {
+			printer = ps;
+		}
 		DocPrintJob job = printer.createPrintJob();
 		DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
 		Doc doc = new SimpleDoc(text_to_print.getBytes(), flavor, null);

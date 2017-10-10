@@ -17,9 +17,13 @@
  		api.connect("ws://localhost:8080/ws-hw-proxy/websocket/hw-proxy");
  		out.write("<h2>"+api.getAciveDevices()+"</h2>\n");
  		try{
- 			api.sendMessage("[SERVER]", "[HWPOS339]", "PRINTING TO DEVICE");
+//  			List<String> lis=api.getPrinters("[HWPOS339]");
+//  			for(String pr:lis){
+//  				out.write(pr+"<br/>");
+//  			}
+ 			api.sendMessage("[SERVER]", "[HWPOS339]", "PRINTING TO DEVICE","Epson LX300");
  		}catch (Exception e){
- 			out.write("<p>"+e.getMessage()+"</p>");
+ 			out.write("<p><i>"+e.getMessage()+"</i></p>");
  		}
 // 		//api.sendFile("[SERVER]", "[HWPOS001]",File f);
  		api.disconnect();

@@ -66,6 +66,13 @@ public class HwProxy {
 	 */
 	@OnMessage
 	public void onTextMessage(String mess, Session sesion) {
+		log.info(mess);
+		Map<?,?> map = jsonProcessor.fromJson(mess,Map.class);
+		if(map!=null && map.get("option")!=null) {
+			sesion.getUserProperties().put("devID", map.get("devID"));
+			sesion.getUserProperties().put("printers", map.get("printers"));
+			return; 
+		}
 		final MessageInfoDevice message = jsonProcessor.fromJson(mess, MessageInfoDevice.class);
 		final HwProxy destinationConnection = getDestinationDevConnection(message.getMessageInfo().getTo_dev());
 		try {
@@ -76,7 +83,7 @@ public class HwProxy {
 				final String info_message = "Se está intentando enviar un mensaje a un device no conectado:" + mess;
 				log.warn(info_message);
 				sesion.getBasicRemote().sendText(jsonProcessor.toJson(
-						new MessageInfoDevice(HWPROXY_ID, message.getMessageInfo().getFrom_dev(), info_message)));
+						new MessageInfoDevice(HWPROXY_ID, message.getMessageInfo().getFrom_dev(), info_message,message.getMessageInfo().getTo_printer())));
 			}
 		} catch (IOException e) {
 			log.error("Error de IO", e);
