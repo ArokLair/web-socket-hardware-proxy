@@ -21,7 +21,7 @@
 //  			for(String pr:lis){
 //  				out.write(pr+"<br/>");
 //  			}
- 			api.sendMessage("[SERVER]", "[HWPOS339]", "PRINTING TO DEVICE","Epson LX300");
+ 			//api.sendMessage("[SERVER]", "[HWPOS339]", "PRINTING TO DEVICE","Epson LX300");
  		}catch (Exception e){
  			out.write("<p><i>"+e.getMessage()+"</i></p>");
  		}

@@ -66,7 +66,7 @@ public class HwProxy {
 	 */
 	@OnMessage
 	public void onTextMessage(String mess, Session sesion) {
-		log.info(mess);
+//		log.info(mess);
 		Map<?,?> map = jsonProcessor.fromJson(mess,Map.class);
 		if(map!=null && map.get("option")!=null) {
 			sesion.getUserProperties().put("devID", map.get("devID"));
