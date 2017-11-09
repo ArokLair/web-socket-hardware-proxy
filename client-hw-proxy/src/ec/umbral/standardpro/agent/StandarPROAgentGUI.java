@@ -1,6 +1,5 @@
 package ec.umbral.standardpro.agent;
 
-import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -19,7 +18,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -125,7 +123,7 @@ public class StandarPROAgentGUI extends JFrame {
 						UIManager.put("swing.boldMetal", Boolean.FALSE);
 						StandarPROAgentGUI frame = new StandarPROAgentGUI();
 						frame.setLocationRelativeTo(null);
-						frame.setVisible(true);
+//						frame.setVisible(true);
 						// AppLock.releaseLock(); // Release lock
 					} catch (Exception e) {
 						log.error("Error en Cargar formulario", e);
@@ -334,6 +332,13 @@ public class StandarPROAgentGUI extends JFrame {
 			popup.add(defaultItem);
 			trayIcon = new TrayIcon(image, "SystemTray Demo", popup);
 			trayIcon.setImageAutoSize(true);
+			
+			try {
+				tray.add(trayIcon);
+				setVisible(false);
+			} catch (Exception ex) {
+				log.error("unable to add to tray", ex);
+			}
 		} else {
 			System.out.println("system tray not supported");
 		}
@@ -342,17 +347,35 @@ public class StandarPROAgentGUI extends JFrame {
 			public void windowStateChanged(WindowEvent e) {
 				if (e.getNewState() == ICONIFIED) {
 					try {
-						tray.add(trayIcon);
+						boolean found = false;
+						for(TrayIcon icon : tray.getTrayIcons()){
+							if(icon.equals(trayIcon)){
+								found = true;
+								break;
+							}
+						}
+						if(!found){
+							tray.add(trayIcon);
+						}
 						setVisible(false);
-					} catch (AWTException ex) {
+					} catch (Exception ex) {
 						log.error("unable to add to tray", ex);
 					}
 				}
 				if (e.getNewState() == 7) {
 					try {
-						tray.add(trayIcon);
+						boolean found = false;
+						for(TrayIcon icon : tray.getTrayIcons()){
+							if(icon.equals(trayIcon)){
+								found = true;
+								break;
+							}
+						}
+						if(!found){
+							tray.add(trayIcon);
+						}
 						setVisible(false);
-					} catch (AWTException ex) {
+					} catch (Exception ex) {
 						log.error("unable to add to system tray", ex);
 					}
 				}
@@ -378,7 +401,8 @@ public class StandarPROAgentGUI extends JFrame {
 	private void loadProperties() {
 		properties = new Properties();
 		try {
-			InputStream is = new FileInputStream("conf.properties");
+			InputStream is = this.getClass().getResourceAsStream("/conf.properties");
+//			InputStream is = new FileInputStream("conf.properties");
 			properties.load(is);
 			String devID = properties.getProperty("DEVICEID");
 			String defaultPrinter = properties.getProperty("DEFAULT_PRINTER");
@@ -451,6 +475,23 @@ public class StandarPROAgentGUI extends JFrame {
 		}
 	}
 
+	
+	private void try_reconnect(){
+		while (this.session_ws == null || !this.session_ws.isOpen()) {
+			log.error("Tratando de reconectar al servidor");
+			conecta_ws();
+			if (this.session_ws == null || !this.session_ws.isOpen()) {
+				try {
+					log.error("No se pudo reconectar. Esperando 30 segundos...");
+					Thread.sleep(30000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	
 	private void setInfoMessage(String text, JLabel label) {
 		label.setForeground(Color.BLUE);
 		label.setText(text);
@@ -482,11 +523,14 @@ public class StandarPROAgentGUI extends JFrame {
 			setErroMessage("ERROR " + closeReason.getCloseCode().getCode(), lblStatusserver);
 		}
 		printinfoTextArea(message + "\n");
+		
+		try_reconnect();
 	}
-
+	
+	
 	@OnMessage
 	public void onMessage(String message, Session session) {
-		log.info(message);
+//		log.info(message);
 		MessageInfoDevice mid = jsonparse.fromJson(message, MessageInfoDevice.class);
 		if (mid.getMessageInfo() != null) {
 			printDocument(mid.getMessageInfo().getMessage(), mid.getMessageInfo().getTo_printer());
@@ -504,15 +548,15 @@ public class StandarPROAgentGUI extends JFrame {
 	}
 
 	private void printDocument(String message, String p) {
-		String text_to_print = message;
-		log.info(text_to_print);
+//		String text_to_print = message;
+//		log.info(text_to_print);
 		PrintService ps = conecta_impresora(p);
 		if (ps != null) {
 			printer = ps;
 		}
 		DocPrintJob job = printer.createPrintJob();
 		DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
-		Doc doc = new SimpleDoc(text_to_print.getBytes(), flavor, null);
+		Doc doc = new SimpleDoc(message.getBytes(), flavor, null);
 		try {
 			job.print(doc, null);
 		} catch (PrintException e) {
